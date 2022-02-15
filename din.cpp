@@ -182,40 +182,6 @@ void splay(Splay_tree *T);
 
 void splay(const int &n, Splay_tree **T);
 
-/*pair<Splay_tree *, Splay_tree *>
-_add(int n, Splay_tree *k, Splay_tree *T, Splay_tree *F) {
-    pair<Splay_tree *, Splay_tree *> res;
-    if (T == nullptr) {
-        assert(n == 0);
-        auto tmp = k;
-        k->father = F;
-        return {tmp, tmp};
-    }
-    push_down_reverse(T);
-    if (n > get_count(T->left_s)) {
-        res = _add(n - get_count(T->left_s) - 1, k, T->right_s, T);
-        T->right_s = res.first;
-    } else {
-        res = _add(n, k, T->left_s, T);
-        T->left_s = res.first;
-    }
-    update(T);
-    return {T, res.second};
-}
-
-void add(int n, int k, Splay_tree **T) {
-    auto res = _add(n, new Splay_tree(k, nullptr), *T, nullptr);
-    splay(res.second);
-    *T = res.second;
-}
-
-// przejmuje k
-void add(int n, Splay_tree *k, Splay_tree **T) {
-    auto res = _add(n, k, *T, nullptr);
-    splay(res.second);
-    *T = res.second;
-}*/
-
 Splay_tree *_find(int k, Splay_tree *T) {
     while (true) {
         push_down_reverse(T);
@@ -239,48 +205,6 @@ int find(const int &k, Splay_tree **T) {
     *T = res;
     return res->key;
 }
-
-/*pair<Splay_tree *, Splay_tree *> _remove(int n, Splay_tree *T, Splay_tree *F) {
-    assert(T != nullptr);
-    push_down_reverse(T);
-    int c = get_count(T->left_s);
-    if (c == n) {
-        if (T->right_s == nullptr && T->left_s == nullptr) {
-            free(T);
-            return {nullptr, F};
-        } else if (T->right_s == nullptr) {
-            auto tmp = T->left_s;
-            tmp->father = F;
-            free(T);
-            return {tmp, F};
-        } else if (T->left_s == nullptr) {
-            auto tmp = T->right_s;
-            tmp->father = F;
-            free(T);
-            return {tmp, F};
-        } else {
-            int new_key = _find(0, T->right_s)->key; /// ???
-            auto res = _remove(0, T->right_s, T);
-            T->right_s = res.first;
-            T->key = new_key;
-            return {T, res.second};
-        }
-    } else if (c > n) {
-        auto res = _remove(n, T->left_s, T);
-        T->left_s = res.first;
-        return {T, res.second};
-    } else {
-        auto res = _remove(n - c - 1, T->right_s, T);
-        T->right_s = res.first;
-        return {T, res.second};
-    }
-}
-
-void remove(int n, Splay_tree **T) {
-    auto res = _remove(n, *T, nullptr);
-    splay(res.second);
-    *T = res.second;
-}*/
 
 void swap_child(Splay_tree *T, Splay_tree *C, Splay_tree *NC) {
     if (T != nullptr) {
@@ -370,8 +294,10 @@ int which_child(Splay_tree *T) {
 }
 
 void local_splay(Splay_tree *T) {
-    if (T == nullptr || T->father == nullptr)
-        return;
+    if (T == nullptr || T->father == nullptr) {
+        cerr << "local_splay";
+        assert(false);
+    }
     push_down_reverse(T->father);
     push_down_reverse(T);
     if (T->father->father == nullptr) {
@@ -384,10 +310,10 @@ void local_splay(Splay_tree *T) {
         int which_1 = which_child(T);
         int which_2 = which_child(T->father);
         if (which_1 == -1 && which_2 == -1) {
-            rotate_right(T);
+            rotate_right(T->father);
             rotate_right(T);
         } else if (which_1 == 1 && which_2 == 1) {
-            rotate_left(T);
+            rotate_left(T->father);
             rotate_left(T);
         } else if (which_1 == 1 && which_2 == -1) {
             rotate_left(T);
@@ -447,26 +373,6 @@ void move_range(Splay_tree **T, const int &j, const int &l, const int &k) {
     if (a + c - 1 >= 0) reverse_pref(T, a + c - 1);
     if (a - 1 >= 0) reverse_pref(T, a - 1);
 }
-
-/*bool compare_seq(const seq_info_t &a, const seq_info_t &b) {
-    return a.size == b.size && a.right_seq == b.right_seq &&
-           a.left_seq == b.left_seq && a.left_seq_t == b.left_seq_t &&
-           a.right_seq_t == b.right_seq_t && a.longest_seq == b.longest_seq;
-}*/
-
-/*void safe_print(Splay_tree *T, const string &pref) {
-    if (T == nullptr) {
-        cout << pref << '\n';
-        return;
-    }
-    if (T->reverse) {
-        cout << pref << T->key << " reverse" << '\n';
-    } else {
-        cout << pref << T->key << " normal" << '\n';
-    }
-    safe_print(T->left_s, pref + "--");
-    safe_print(T->right_s, pref + "--");
-}*/
 
 char DNA[1000000 + 5];
 string DNA_string;
