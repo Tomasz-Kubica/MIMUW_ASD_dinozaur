@@ -13,8 +13,44 @@ struct seq_info_t {
     char right_seq_t;
 
     explicit seq_info_t(const char &k) : size(1), longest_seq(1), left_seq(1),
-                                        right_seq(1), left_seq_t(k),
-                                        right_seq_t(k) {}
+                                         right_seq(1), left_seq_t(k),
+                                         right_seq_t(k) {}
+
+    seq_info_t(const seq_info_t &l, const char &k) {
+        if (!l.size) {
+            *this = seq_info_t(k);
+            return;
+        }
+        *this = l;
+        size++;
+        if (l.right_seq_t == k) {
+            right_seq++;
+        } else {
+            right_seq = 1;
+            right_seq_t = k;
+        }
+        if (l.left_seq == l.size && l.left_seq_t == k)
+            left_seq++;
+        longest_seq = max(longest_seq, right_seq);
+    }
+
+    seq_info_t(const char &k, const seq_info_t &r) {
+        if (!r.size) {
+            *this = seq_info_t(k);
+            return;
+        }
+        *this = r;
+        size++;
+        if (r.left_seq_t == k) {
+            left_seq++;
+        } else {
+            left_seq = 1;
+            left_seq_t = k;
+        }
+        if (r.right_seq == r.size && r.right_seq_t == k)
+            right_seq++;
+        longest_seq = max(longest_seq, left_seq);
+    }
 
     seq_info_t(const seq_info_t &l, const seq_info_t &r) : size(
             l.size + r.size) {
@@ -40,7 +76,44 @@ struct seq_info_t {
     }
 
     seq_info_t(const seq_info_t &l, const char &k, const seq_info_t &r)
-            : seq_info_t(seq_info_t(l, seq_info_t(k)), r) {}
+            : size(l.size + r.size + 1)
+    {
+        if (!l.size && !r.size) {
+            *this = seq_info_t(k);
+            return;
+        } else if (!l.size) {
+            *this = seq_info_t(k, r);
+            return;
+        } else if (!r.size) {
+            *this = seq_info_t(l, k);
+            return;
+        }
+
+        left_seq_t = l.left_seq_t;
+        left_seq = l.left_seq;
+        if (left_seq == l.size && left_seq_t == k) {
+            left_seq++;
+            if (k == r.left_seq_t)
+                left_seq += r.left_seq;
+        }
+
+        right_seq_t = r.right_seq_t;
+        right_seq = r.right_seq;
+        if (right_seq == r.size && r.right_seq_t == k) {
+            right_seq++;
+            if (k == l.right_seq_t)
+                right_seq += l.right_seq;
+        }
+
+        longest_seq = max(l.longest_seq, r.longest_seq);
+        if (l.right_seq_t == k && k == r.left_seq_t) {
+            longest_seq = max(longest_seq, l.right_seq + r.left_seq  + 1);
+        } else if (l.right_seq_t == k) {
+            longest_seq = max(longest_seq, l.right_seq + 1);
+        } else if (k == r.left_seq_t) {
+            longest_seq = max(longest_seq, r.left_seq + 1);
+        }
+    }
 
     constexpr seq_info_t() : size(0), longest_seq(0), left_seq(0), right_seq(0),
                              left_seq_t(0), right_seq_t(0) {}
@@ -66,7 +139,7 @@ struct Splay_tree {
     bool reverse = false;
 
     Splay_tree(const char &k, Splay_tree *f) : key(k), father(f), count(1),
-                                              seq_info(k) {}
+                                               seq_info(k) {}
 };
 
 int get_count(Splay_tree *T) {
@@ -214,8 +287,10 @@ void swap_child(Splay_tree *T, Splay_tree *C, Splay_tree *NC) {
         //assert(T->left_s == C || T->right_s == C);
         if (T->left_s == C)
             T->left_s = NC;
-        else
+        else if (T->right_s == C)
             T->right_s = NC;
+        else
+            assert(false);
     }
 }
 
@@ -290,7 +365,8 @@ int which_child(Splay_tree *T) {
         return -1;
     if (T->father->right_s == T)
         return 1;
-    //assert(false);
+    cerr << "which_child" << endl;
+    assert(false);
 }
 
 void local_splay(Splay_tree *T) {
@@ -429,6 +505,7 @@ pair<Splay_tree*, Splay_tree*> split(Splay_tree *T, const int &n) {
     if (T->count <= n)
         return {T, nullptr};
     splay(n, &T);
+    //push_down_reverse(T); //???
     Splay_tree *L = T->left_s;
     T->left_s = nullptr;
     if (L != nullptr)
